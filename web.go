@@ -62,15 +62,7 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 func AddLoggingToMux(next http.Handler, logger *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		srcIP := r.RemoteAddr
-		if sip := r.Header.Get("X-Real-IP"); sip != "" {
-			srcIP = sip
-		} else {
-			pIP := net.ParseIP(srcIP)
-			if pIP != nil {
-				srcIP = pIP.String()
-			}
-		}
+		srcIP := HttpRequestGetIP(r)
 		lrw := loggingResponseWriter{
 			ResponseWriter: w,
 			rc:             200,
@@ -90,15 +82,7 @@ func AddLoggingToMux(next http.Handler, logger *slog.Logger) http.Handler {
 func AddLoggingToMuxNoRC(next http.Handler, logger *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		srcIP := r.RemoteAddr
-		if sip := r.Header.Get("X-Real-IP"); sip != "" {
-			srcIP = sip
-		} else {
-			pIP := net.ParseIP(srcIP)
-			if pIP != nil {
-				srcIP = pIP.String()
-			}
-		}
+		srcIP := HttpRequestGetIP(r)
 		defer func() {
 			re := recover()
 			if r.URL.Path == "/metrics" {
