@@ -33,7 +33,9 @@ func Must2r(obj any, err error) any {
 // Uses [os/ReadFile], panics on error, returns string of the file contents if error is nil.
 func MustReadFile(filename string) string {
 	fileBytes, err := os.ReadFile(filename)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	return string(fileBytes)
 }
 
