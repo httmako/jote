@@ -41,7 +41,7 @@ func HttpRequestGetIP(r *http.Request) string {
 	} else if pIP := net.ParseIP(r.RemoteAddr); pIP != nil {
 		return pIP.String()
 	}
-	return ""
+	return r.RemoteAddr
 }
 
 // This is a [net/http.ResponseWriter] compatible http.Responsewriter with an extra "rc" (ReturnCode) variable.
