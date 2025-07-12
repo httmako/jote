@@ -15,12 +15,16 @@ import (
 	"time"
 )
 
+// Adds a simple /metrics route to the mux that returns the prometheus compatible metric "isupdummy 1".
+// This enables you to add monitoring during the development before you decide on metrics to export.
 func AddDummyMetrics(mux *http.ServeMux) {
 	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "# TYPE isupdummy counter\nisupdummy 1")
 	})
 }
 
+// Adds a single-metric /metrics route that returns the number in the counter as a metric.
+// The metric name will be name+"_http_requests_total".
 func AddMetrics(mux *http.ServeMux, name string, counter *atomic.Uint64) {
 	metricText := "# TYPE " + name + "_http_requests_total counter\n" + name + "_http_requests_total "
 	mux.HandleFunc("GET /metrics", func(w http.ResponseWriter, r *http.Request) {
@@ -28,6 +32,7 @@ func AddMetrics(mux *http.ServeMux, name string, counter *atomic.Uint64) {
 	})
 }
 
+// Returns a request's IP, in order of priority: X-Real-IP header, X-Forwarded-For header, r.RemoteAddr, "".
 func HttpRequestGetIP(r *http.Request) string {
 	if sip := r.Header.Get("X-Real-IP"); sip != "" {
 		return sip
@@ -39,16 +44,21 @@ func HttpRequestGetIP(r *http.Request) string {
 	return ""
 }
 
+// This is a [net/http.ResponseWriter] compatible http.Responsewriter with an extra "rc" (ReturnCode) variable.
 type loggingResponseWriter struct {
 	http.ResponseWriter
 	rc int
 }
 
+// Overwrite WriteHeader to save the statusCode to a variable that can be read later.
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.rc = statusCode
 }
 
+// This wraps the mux (next) to log every request to logger. Recovers panics and ignores the /metrics path.
+// It logs the ip, url, duration, status and error (recovered from panic).
+// The special statuscode logging via the [loggingResponseWriter] type adds a ~50-100ns overhead to every request.
 func AddLoggingToMux(next http.Handler, logger *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -76,6 +86,7 @@ func AddLoggingToMux(next http.Handler, logger *slog.Logger) http.Handler {
 	})
 }
 
+// Same as [AddLoggingToMux] but this function does not log the return code.
 func AddLoggingToMuxNoRC(next http.Handler, logger *slog.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -99,6 +110,8 @@ func AddLoggingToMuxNoRC(next http.Handler, logger *slog.Logger) http.Handler {
 	})
 }
 
+// Same as [AddLoggingToMux] but increases the counter by 1 every request.
+// This should be used together with [AddMetrics] to have a request counter metric.
 func AddLoggingToMuxWithCounter(next http.Handler, logger *slog.Logger, counter *atomic.Uint64) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -126,6 +139,8 @@ func AddLoggingToMuxWithCounter(next http.Handler, logger *slog.Logger, counter 
 	})
 }
 
+// Creates a [net/http.Server] that uses the provided mux to run the webserver and shutdown gracefully if Interrupt,SIGINT or SIGTERM signals are received..
+// Timeouts for read/write/idle are 10 seconds. The shutdown does not have a context deadline, so it should use the IdleTimeout.
 func RunMux(addr string, mux http.Handler, logger *slog.Logger) {
 	logger.Info("Now listening", "addr", addr)
 	srv := &http.Server{
@@ -158,6 +173,7 @@ func RunMux(addr string, mux http.Handler, logger *slog.Logger) {
 	<-idleConnsClosed
 }
 
+// Same as [RunMux] but without the graceful shutdown.
 func RunMuxSimple(addr string, mux *http.ServeMux) error {
 	s := &http.Server{
 		Addr:           addr,
@@ -170,8 +186,10 @@ func RunMuxSimple(addr string, mux *http.ServeMux) error {
 	return s.ListenAndServe()
 }
 
+// A simple, short alias to refer to a string-interface map.
 type H map[string]interface{}
 
+// Used to execute a template with w. Uses [template.ExecuteTemplate].
 func ExecuteTemplate(tmpl *template.Template, w http.ResponseWriter, name string, tmap H) {
 	if err := tmpl.ExecuteTemplate(w, name, tmap); err != nil {
 		http.Error(w, "internal server error", 500)
@@ -179,6 +197,8 @@ func ExecuteTemplate(tmpl *template.Template, w http.ResponseWriter, name string
 	}
 }
 
+// Same as [ExecuteTemplate] but adds the route directly to mux with the given path.
+// This is useful as a one-line template rendering route where not much logic has to be added.
 func RenderTemplate(mux *http.ServeMux, path string, tmpl *template.Template, tmplName string, tmap H) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, tmplName, tmap); err != nil {
