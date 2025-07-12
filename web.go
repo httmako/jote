@@ -126,6 +126,7 @@ func AddLoggingToMuxWithCounter(next http.Handler, logger *slog.Logger, counter 
 		}
 		lrw := loggingResponseWriter{
 			ResponseWriter: w,
+			rc:             200,
 		}
 		defer func() {
 			re := recover()
