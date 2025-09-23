@@ -69,7 +69,7 @@ func CreateLogger(path string) *slog.Logger {
 // Same as [CreateLogger] but will set the loglevel to debug if the DEBUG environment variable is set (to any value)
 func CreateLoggerWithDebug(path string) *slog.Logger {
 	logger, lvar := CreateLoggerWithLevel(path)
-    denv := os.Getenv("DEBUG")
+	denv := os.Getenv("DEBUG")
 	if denv != "" {
 		lvar.Set(slog.LevelDebug)
 	}
@@ -91,6 +91,8 @@ func CreateLoggerWithLevel(path string) (*slog.Logger, *slog.LevelVar) {
 		return slog.New(slog.NewTextHandler(f, logHO)), loglvl
 	}
 }
+
+
 
 // Small wrapper to start a goroutine and defer recover.
 func Go(gFunc func()) {
