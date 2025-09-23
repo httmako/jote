@@ -184,6 +184,7 @@ func ExecuteTemplate(tmpl *template.Template, w http.ResponseWriter, name string
 
 // Same as [ExecuteTemplate] but adds the route directly to mux with the given path.
 // This is useful as a one-line template rendering route where not much logic has to be added.
+// Warning: The map H that is provided will be used for every request as this is a "static" function and not evaluated every request.
 func RenderTemplate(mux *http.ServeMux, path string, tmpl *template.Template, tmplName string, tmap H) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		if err := tmpl.ExecuteTemplate(w, tmplName, tmap); err != nil {
