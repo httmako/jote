@@ -66,6 +66,16 @@ func CreateLogger(path string) *slog.Logger {
 	}
 }
 
+// Same as [CreateLogger] but will set the loglevel to debug if the DEBUG environment variable is set (to any value)
+func CreateLoggerWithDebug(path string) *slog.Logger {
+	logger, lvar := CreateLoggerWithLevel(path)
+    denv := os.Getenv("DEBUG")
+	if denv != "" {
+		lvar.Set(slog.LevelDebug)
+	}
+	return logger
+}
+
 // Same as CreateLogger but returns the loglevel to control the logger.
 func CreateLoggerWithLevel(path string) (*slog.Logger, *slog.LevelVar) {
 	loglvl := new(slog.LevelVar)
