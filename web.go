@@ -69,6 +69,9 @@ func AddLoggingToMux(next http.Handler, logger *slog.Logger) http.Handler {
 		}
 		defer func() {
 			re := recover()
+			if re != nil {
+				lrw.WriteHeader(500)
+			}
 			if r.URL.Path == "/metrics" {
 				return
 			}
@@ -85,6 +88,9 @@ func AddLoggingToMuxNoRC(next http.Handler, logger *slog.Logger) http.Handler {
 		srcIP := HttpRequestGetIP(r)
 		defer func() {
 			re := recover()
+			if re != nil {
+				w.WriteHeader(500)
+			}
 			if r.URL.Path == "/metrics" {
 				return
 			}
@@ -114,6 +120,9 @@ func AddLoggingToMuxWithCounter(next http.Handler, logger *slog.Logger, counter 
 		}
 		defer func() {
 			re := recover()
+			if re != nil {
+				lrw.WriteHeader(500)
+			}
 			if r.URL.Path == "/metrics" {
 				return
 			}
