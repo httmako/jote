@@ -1,6 +1,6 @@
 module github.com/httmako/jote
 
-go 1.25.1
+go 1.25.5
 
 require sigs.k8s.io/yaml v1.6.0
 

@@ -1,6 +1,7 @@
 package jote
 
 import (
+	"encoding/json"
 	"log/slog"
 	"os"
 	"sigs.k8s.io/yaml"
@@ -37,6 +38,19 @@ func MustReadFile(filename string) string {
 		panic(err)
 	}
 	return string(fileBytes)
+}
+
+// A simple wrapper for calling json.Unmarshal. It reads in the file and parses the content into the config object.
+// Any error that occurs will call panic.
+func ReadConfigJSON(path string, config any) {
+	configfile, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(configfile, &config)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // A simple wrapper for [sigs.k8s.io/yaml] to read a yaml file from path and parse it into the 2nd argument.
@@ -91,8 +105,6 @@ func CreateLoggerWithLevel(path string) (*slog.Logger, *slog.LevelVar) {
 		return slog.New(slog.NewTextHandler(f, logHO)), loglvl
 	}
 }
-
-
 
 // Small wrapper to start a goroutine and defer recover.
 func Go(gFunc func()) {
